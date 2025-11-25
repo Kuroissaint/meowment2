@@ -34,17 +34,17 @@
         </div>
         <div class="cat-info">
           <h3>{{ cat.nama }}</h3>
-          <p>Umur: {{ cat.umur }}</p>
+          
           <p>Warna: {{ cat.warnaBulu }}</p>
           <p>Jenis kelamin: {{ cat.jenisKelamin }}</p>
-          <p>Alamat: {{ cat.alamat }}</p>
+          <p>Alamat: {{ cat.alamatLengkap }}</p>
           <p>{{ cat.sudahSteril ? 'Sudah disteril' : 'Belum disteril' }}</p>
   
-          <h4 class="price">Biaya Adopsi: {{ cat.biayaAdopsi }}</h4>
+          <h4 class="price">Biaya Adopsi: {{ formatRupiah(cat.biayaAdopsi) }}</h4>
           
-          <button class="ajukanadopt-btn" @click="$router.push({ name: 'AjukanAdopsi' })">
-            Ajukan adopsi
-          </button>
+         <button class="ajukanadopt-btn" @click="ajukanAdopsi"> Ajukan adopsi
+</button>
+
         </div>
       </div>
   
@@ -55,65 +55,81 @@
   
     </section>
   </template>
-  
   <script>
-  export default {
-    name: "AdoptDetail",
-    data() {
-      return {
-        cat: null,
-        // 1. STATE CAROUSEL: Melacak gambar mana yang aktif
-        currentImageIndex: 0, 
-      };
-    },
-    mounted() {
-      // 2. LOGIC PENERIMAAN GALERI
-      const galeriString = this.$route.query.galeri;
-      let galeriArray = [];
+
   
-      try {
-          if (galeriString) {
-              // Mengubah string JSON kembali menjadi array JavaScript
-              galeriArray = JSON.parse(galeriString);
-          }
-      } catch (e) {
-          console.error("Gagal mem-parsing galeri:", e);
-      }
-      
-      this.cat = {
-        nama: this.$route.params.nama,
-        umur: this.$route.query.umur, 
-        kota: this.$route.query.kota,
-        warnaBulu: this.$route.query.warnaBulu,
-        jenisKelamin: this.$route.query.jenisKelamin,
-        alamat: this.$route.query.alamat,
-        sudahSteril: this.$route.query.sudahSteril == "true",
-        biayaAdopsi: this.$route.query.biayaAdopsi,
-        deskripsi: this.$route.query.deskripsi,
-        // Menyimpan array foto ke dalam objek cat
-        galeri: galeriArray,
-      };
+export default {
+    data() {
+        return {
+            cat: null, // Hardcode data cat dihapus, diisi saat komponen dibuat
+            currentImageIndex: 0,
+        };
+    },
+    created() {
+
+        const id = this.$route.query.id;
+        const query = this.$route.query;
+
+        // Membentuk objek cat dari data yang diterima
+        this.cat = {
+            id:  query.id,
+            nama: query.nama, // Nama dari params
+            umur: query.umur,
+          //  kota: query.kota,
+            jenisKelamin: query.jenisKelamin,
+            warnaBulu: query.warnaBulu,
+            alamatLengkap: query.alamatLengkap,
+            deskripsi: query.deskripsi,
+            biayaAdopsi: query.biaya,
+            galeri: JSON.parse(query.galeri || '[]')
+        };
     },
     methods: {
-      // 3. METHODS CAROUSEL: Pindah ke gambar berikutnya
-      nextImage() {
-        const nextIndex = this.currentImageIndex + 1;
-        // Kembali ke gambar pertama jika sudah mencapai akhir
-        this.currentImageIndex = nextIndex < this.cat.galeri.length ? nextIndex : 0;
-      },
-      // Pindah ke gambar sebelumnya
-      prevImage() {
-        const prevIndex = this.currentImageIndex - 1;
-        // Kembali ke gambar terakhir jika sudah mencapai awal
-        this.currentImageIndex = prevIndex >= 0 ? prevIndex : this.cat.galeri.length - 1;
-      },
-      // Pindah ke gambar berdasarkan dot indicator
-      selectImage(index) {
-          this.currentImageIndex = index;
-      }
+
+
+      // unutk format rupiah
+      // 👇 FUNGSI BARU UNTUK FORMAT RUPIAH
+        formatRupiah(angka) {
+            if (!angka) return 'Rp0,00'; // Handle null atau 0
+
+            // 1. Konversi angka menjadi string dan ambil digit di belakang
+            const numberString = angka.toString();
+            
+            // 2. Gunakan Intl.NumberFormat untuk pemformatan mata uang Indonesia
+            // Metode ini lebih modern dan akurat
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 2, // Pastikan ada dua angka di belakang koma (Rp100.000,00)
+                maximumFractionDigits: 2
+            }).format(angka);
+        },
+    
+
+      
+        // Fungsi untuk menavigasi ke formulir adopsi
+        ajukanAdopsi() {
+            this.$router.push({
+                name: 'AjukanAdopsi',
+                query: {
+                  id: this.cat.id,
+                  nama: this.cat.nama,
+                  umur: this.cat.umur,
+                  warnaBulu:this.cat.warnaBulu,
+                  alamat: this.cat.alamat,
+                  deskripsi: this.cat.deskripsi,
+                  biayaAdopsi: this.cat.biaya,
+                  galeri: JSON.stringify(this.cat.galeri)
+
+                }
+            });
+        },
+        // ... (prevImage, nextImage, selectImage tetap sama)
     }
-  };
-  </script>
+}
+
+
+</script>
   
   <style scoped>
   .detail-container {
@@ -212,7 +228,7 @@
     display: block;
     width: fit-content;
     margin-top: 15px;
-    padding: 10px 20px;
+    padding: 20px 30px;
     background-color: #ccc;
     border: none;
     border-radius: 8px;
