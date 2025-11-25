@@ -1,94 +1,119 @@
 <template>
-    <div class="modal-overlay" @click.self="$emit('close')">
-      <div class="modal-box">
-        <div class="detail-page">
-          <div class="detail-card">
-            <!-- Judul di Tengah -->
-            <h2 class="judul-laporan">Detail Laporan</h2>
-  
-            <!-- Bagian Konten Utama -->
-            <div class="content-wrapper">
-              <!-- Foto -->
-              <div class="foto-laporan">
-                <img :src="laporan.foto" alt="Foto laporan" />
-              </div>
-  
-              <!-- Info -->
-              <div class="info-content">
-                <div class="info-grid">
-                  <div class="info-item">
-                    <strong>Nama Pelapor</strong><span>:</span>
-                    <p>{{ laporan.namaPelapor }}</p>
-                  </div>
-                  <div class="info-item">
-                    <strong>No. Telepon</strong><span>:</span>
-                    <p>{{ laporan.telepon }}</p>
-                  </div>
-                  <div class="info-item">
-                    <strong>Waktu Penemuan</strong><span>:</span>
-                    <p>{{ laporan.waktu }}</p>
-                  </div>
-                  <div class="info-item">
-                    <strong>Lokasi</strong><span>:</span>
-                    <p>{{ laporan.lokasi }}</p>
-                  </div>
-                  <div class="info-item">
-                    <strong>Tag</strong><span>:</span>
-                    <p>{{ laporan.tag }}</p>
-                  </div>
-                  <div class="info-item">
-                    <strong>Deskripsi</strong><span>:</span>
-                    <p>{{ laporan.deskripsi }}</p>
-                  </div>
-                  <div class="info-item">
-                    <strong>Status Penanganan</strong><span>:</span>
-                    <span :class="['status-badge', statusClass]">{{ laporan.status }}</span>
-                  </div>
+  <div class="modal-overlay" @click.self="$emit('close')">
+    <div class="modal-box">
+      <div class="detail-page">
+        <div class="detail-card">
+          <!-- Judul di Tengah -->
+          <h2 class="judul-laporan">Detail Laporan</h2>
+
+          <!-- Bagian Konten Utama -->
+          <div class="content-wrapper">
+            <!-- Foto -->
+            <div class="foto-laporan">
+              <img :src="laporan.foto || defaultFoto" alt="Foto laporan" />
+            </div>
+
+            <!-- Info -->
+            <div class="info-content">
+              <div class="info-grid">
+                <div class="info-item">
+                  <strong>Nama Pelapor</strong><span>:</span>
+                  <p>{{ laporan.namaPelapor }}</p>
+                </div>
+                <div class="info-item">
+                  <strong>No. Telepon</strong><span>:</span>
+                  <p>{{ laporan.telepon }}</p>
+                </div>
+                <div class="info-item">
+                  <strong>Waktu Penemuan</strong><span>:</span>
+                  <p>{{ laporan.waktu }}</p>
+                </div>
+                <div class="info-item">
+                  <strong>Lokasi</strong><span>:</span>
+                  <p>{{ laporan.lokasi }}</p>
+                </div>
+                <div class="info-item">
+                  <strong>Tag</strong><span>:</span>
+                  <p>{{ laporan.tag }}</p>
+                </div>
+                <div class="info-item">
+                  <strong>Deskripsi</strong><span>:</span>
+                  <p>{{ laporan.deskripsi }}</p>
+                </div>
+                <div class="info-item">
+                  <strong>Status Penanganan</strong><span>:</span>
+                  <span :class="['status-badge', statusClass]">{{ laporan.status }}</span>
                 </div>
               </div>
             </div>
-  
-            <!-- Tombol Kembali -->
-            <div class="btn-container">
-              <button class="btn-back" @click="$emit('close')">Tutup</button>
-            </div>
+          </div>
+
+          <!-- Tombol Kembali -->
+          <div class="btn-container">
+            <button class="btn-back" @click="$emit('close')">Tutup</button>
           </div>
         </div>
       </div>
     </div>
-  </template>
-  
-  <script setup>
-  import { ref, onMounted } from 'vue'
-  import kucheng from '../assets/kucheng.png'
-  
-  // Menerima props jika ada
-  const props = defineProps({
-    rescueId: [String, Number]
-  })
-  
-  // Mendefinisikan event yang bisa dipancarkan ke parent
-  const emit = defineEmits(['close'])
-  
-  const laporan = ref({
-    foto: kucheng,
-    namaPelapor: 'pau',
-    telepon: '08123456789',
-    waktu: '4 Nov 2025, 18:58',
-    lokasi: 'Taman Kota Bandung',
-    tag: 'Luka Parah',
-    deskripsi: 'oren, jantan, kurus, luka di kaki kiri, butuh pertolongan segera, terlihat di taman kota bandung sekitar jam 6 sore',
-    status: 'Sedang Diproses'
-  })
-  
-  const statusClass = ref('')
-  
-  onMounted(() => {
-    if (laporan.value.status === 'Selesai') statusClass.value = 'selesai'
-    else if (laporan.value.status === 'Sedang Diproses') statusClass.value = 'sedang'
-    else statusClass.value = 'belum'
-  })
-  </script>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted, watch } from 'vue'
+import axios from '../services/api'
+import kucheng from '../assets/kucheng.png'
+
+const props = defineProps({
+  rescueId: [String, Number]
+})
+
+const emit = defineEmits(['close'])
+const defaultFoto = kucheng
+
+const laporan = ref({
+  foto: defaultFoto,
+  namaPelapor: '',
+  telepon: '',
+  waktu: '',
+  lokasi: '',
+  tag: '',
+  deskripsi: '',
+  status: ''
+})
+
+const statusClass = ref('')
+
+const fetchLaporan = async (id) => {
+  try {
+    const res = await axios.get(`/rescue?ids=${id}`)
+    const data = res.data.data[0] // ambil data pertama dari array
+
+    if (data) {
+      laporan.value.foto = data.gambar || defaultFoto
+      laporan.value.namaPelapor = data.nama_pelapor
+      laporan.value.telepon = data.telepon
+      laporan.value.waktu = new Date(data.waktu_penemuan).toLocaleString('id-ID', {
+        year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+      })
+      laporan.value.lokasi = data.lokasi_penemuan
+      laporan.value.tag = data.tags || 'Tidak Ada'
+      laporan.value.deskripsi = data.deskripsi || '-'
+      laporan.value.status = data.status_display || 'Sedang Diproses'
+
+      if (laporan.value.status === 'Selesai') statusClass.value = 'selesai'
+      else if (laporan.value.status === 'Sedang Diproses') statusClass.value = 'sedang'
+      else statusClass.value = 'belum'
+    }
+  } catch (err) {
+    console.error('Gagal ambil detail rescue:', err)
+  }
+}
+
+// ambil data saat mounted atau jika rescueId berubah
+onMounted(() => fetchLaporan(props.rescueId))
+watch(() => props.rescueId, (newId) => fetchLaporan(newId))
+</script>
+
   
   <style scoped>
   /* --- OVERLAY & MODAL BOX (CSS Kunci untuk Modal) --- */
