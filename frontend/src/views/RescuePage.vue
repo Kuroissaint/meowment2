@@ -1,6 +1,5 @@
 <template>
   <div class="search-page">
-    <!-- Tombol aksi -->
     <div class="filter-controls">
       <button class="btn-aksi" @click="buatLaporan">Kirim Laporan</button>
       <button 
@@ -12,107 +11,196 @@
       </button>
     </div>
 
-    <!-- Kotak laporan -->
     <transition name="fade">
-      <div v-if="showLaporan" class="laporan-anda">
+            <div v-if="showLaporan && latestUserReport" class="laporan-anda">
         <h2>Laporan Anda</h2>
         <div class="laporan-box">
           <div class="laporan-foto">
-            <img src="../assets/kucheng.png" alt="Foto laporan" />
+            <img :src="latestUserReport.gambar || '../assets/kucheng.png'" alt="Foto laporan" />
           </div>
 
           <div class="laporan-info">
-            <div class="info-item" v-for="(item, index) in laporanFields" :key="index">
+            <div class="info-item" v-for="(item, index) in dynamicLaporanFields" :key="index">
               <strong>{{ item.label }}</strong><span>:</span>
               <p>{{ item.value }}</p>
             </div>
 
             <div class="info-item">
               <strong>Status Penanganan</strong> <span>:</span>
-              <span class="status-badge sedang">Sedang Diproses</span>
+              <span 
+    :class="['status-badge', latestUserReport.status_display === 'Sedang Diproses' ? 'sedang' : 'selesai']"
+>
+    {{ latestUserReport.status_display }} 
+</span>
             </div>
           </div>
         </div>
       </div>
     </transition>
 
-    <!-- Judul tengah -->
+    <div v-if="showLaporan && !latestUserReport && !loading" class="laporan-anda">
+        <p style="text-align: center; color: var(--dark);">Anda belum membuat laporan rescue.</p>
+    </div>
+
     <div class="laporan-lain-section">
       <h1><strong>Update Kucing di Sekitarmu!</strong></h1>
       <p>Temukan kabar terbaru tentang kucing yang masih butuh uluran tanganmu. Sudah siap jadi pahlawan hari ini?</p>
     </div>
 
-    <!-- Grid laporan -->
     <div class="results-grid">
-      <div v-for="i in 10" :key="i" class="cat-card">
-        <div class="card-image">
-          <img src="../assets/kucheng.png" alt="Foto Kucing" />
+      <template v-if="loading">
+        <div style="grid-column: 1 / -1; text-align: center; color: var(--dark);">Loading laporan...</div>
+      </template>
+      <template v-else-if="allReports.length === 0">
+        <div style="grid-column: 1 / -1; text-align: center; color: var(--dark);">Belum ada laporan rescue di sekitar Anda.</div>
+      </template>
+      <template v-else>
+        <div v-for="report in allReports" :key="report.id" class="cat-card">
+          <div class="card-image">
+            <img :src="report.gambar || '../assets/kucheng.png'" alt="Foto Kucing" />
+          </div>
+
+          <div class="card-details">
+            <p><strong>Status</strong> : {{ report.status_display }}</p>
+            <p><strong>Lokasi</strong> : {{ report.lokasi_penemuan }}</p>
+            <p><strong>Tag</strong> : {{ report.tags || 'Tidak Ada Tag' }}</p>
         </div>
-
-        <div class="card-details">
-          <p><strong>Status</strong> : Sedang Diproses</p>
-          <p><strong>Lokasi</strong> : Bandung</p>
-          <p><strong>Tag</strong> : Luka Parah</p>
+          <button class="btn-selengkapnya" @click="openDetailRescue(report.id)">
+            Selengkapnya
+          </button>
         </div>
+      </template>
+      
+    </div>
 
-        <button class="btn-selengkapnya" @click="openDetailRescue(i)">
-          Selengkapnya
-        </button>      
-      </div>
-  </div>
-
-  <transition name="fade-pop">
-  <DetailRescue 
-      v-if="showDetailRescue" 
-      :rescue-id="selectedRescueId" 
-      @close="closeDetailRescue"
-  />
-  </transition>
+    <transition name="fade-pop">
+      <DetailRescue 
+        v-if="showDetailRescue" 
+        :rescue-id="selectedRescueId" 
+        @close="closeDetailRescue"
+      />
+    </transition>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import DetailRescue from '../components/DetailRescue.vue' // Tambahkan impor ini
+import DetailRescue from '../components/DetailRescue.vue'
+import axios from "../services/api";
 
 const router = useRouter()
+
 const showLaporan = ref(false)
+const allReports = ref([])
+const userReports = ref([])
+const loading = ref(true)
 
-const toggleLaporan = () => {
-  showLaporan.value = !showLaporan.value
+// 🔥 Ambil laporan terbaru user
+const latestUserReport = computed(() =>
+  userReports.value.length > 0 ? userReports.value[0] : null
+)
+
+// 🔥 Field laporan user
+const dynamicLaporanFields = computed(() => {
+  const report = latestUserReport.value
+  if (!report) return []
+
+  const formattedDate = new Date(report.waktu_penemuan).toLocaleString("id-ID", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  })
+
+  return [
+    { label: "Nama Pelapor", value: report.nama_pelapor },
+    { label: "No. Telepon", value: report.telepon },
+    { label: "Waktu Penemuan", value: formattedDate },
+    { label: "Lokasi", value: report.lokasi_penemuan },
+    { label: "Tag", value: report.tags || "Tidak Ada" },
+    { label: "Deskripsi", value: report.deskripsi }
+  ]
+})
+
+/* ============================================
+   🔥 FETCH GRID LAPORAN RESCUE
+============================================ */
+const fetchAllReports = async () => {
+  try {
+    const res = await axios.get('/rescue')
+    allReports.value = res.data.data || []
+  } catch (err) {
+    console.error("Gagal ambil Grid:", err)
+  }
 }
 
-const buatLaporan = () => {
-  router.push({ name: 'FormLaporanRescue' })
+/* ============================================
+   🔥 FETCH LAPORAN ANDA
+============================================ */
+const fetchUserReports = async () => {
+  const ids = JSON.parse(localStorage.getItem('myRescueReports') || '[]')
+  if (ids.length === 0) {
+    userReports.value = []
+    return
+  }
+
+  try {
+    const idsString = ids.join(',')
+    const res = await axios.get(`/rescue?ids=${idsString}`)
+    const newReports = res.data.data || []
+
+    // ✅ Tambahkan laporan baru ke existing array, tanpa overwrite
+    newReports.forEach(r => {
+      const exists = userReports.value.find(u => u.id === r.id)
+      if (!exists) userReports.value.push(r)
+    })
+  } catch (err) {
+    console.error("Gagal ambil Laporan Anda:", err)
+  }
 }
 
-const laporanFields = [
-  { label: 'Nama Pelapor', value: 'pau' },
-  { label: 'No. Telepon', value: '08123456789' },
-  { label: 'Waktu Penemuan', value: '4 Nov 2025, 18:58' },
-  { label: 'Lokasi', value: 'Bandung' },
-  { label: 'Tag', value: 'Luka Parah' },
-  { label: 'Deskripsi', value: 'Kucing ditemukan dalam keadaan terluka di jalan' },
-]
 
-// Tambahkan state untuk modal
-  const showDetailRescue = ref(false)
-  const selectedRescueId = ref(null)
+/* ============================================
+   🔥 REFRESH DATA
+============================================ */
+const refreshData = async () => {
+  loading.value = true
+  await fetchAllReports()
+  await fetchUserReports()
+  loading.value = false
+}
 
-  const openDetailRescue = (id) => {
+/* ============================================
+   ACTION / BUTTONS
+============================================ */
+const toggleLaporan = () => showLaporan.value = !showLaporan.value
+const buatLaporan = () => router.push({ name: 'FormLaporanRescue' })
+
+/* ============================================
+   DETAIL RESCUE POPUP
+============================================ */
+const showDetailRescue = ref(false)
+const selectedRescueId = ref(null)
+
+const openDetailRescue = (id) => {
   selectedRescueId.value = id
   showDetailRescue.value = true
   document.body.style.overflow = 'hidden'
-  }
+}
 
-  const closeDetailRescue = () => {
+const closeDetailRescue = () => {
   showDetailRescue.value = false
   selectedRescueId.value = null
   document.body.style.overflow = 'auto'
-  }
+  refreshData()
+}
 
+onMounted(() => refreshData())
 </script>
+
+
 
 <style scoped>
 .search-page {
