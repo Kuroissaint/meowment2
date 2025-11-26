@@ -1,395 +1,471 @@
 <template>
     <div :class="$style.loginPage">
       <div :class="$style.mainContainer">
-        <!-- Background Box untuk Form -->
         <div :class="$style.formBackgroundBox">
-          <!-- Left Side - Register Form -->
+          
           <div :class="$style.leftSide">
-            <div :class="$style.loginForm">
-              <div :class="$style.intro">
-                <h1 :class="$style.welcomeTitle">
-                  Selamat Datang 👋
-                </h1>
-                <p :class="$style.subtitle">Hari yang baru untuk teman berbulu kita</p>
-              </div>
-  
-              <form :class="$style.form" @submit.prevent="handleSignUp">
-                <div :class="$style.inputGroup">
-                  <label :class="$style.label">Nama Lengkap</label>
-                  <input 
-                    type="text" 
-                    :class="$style.inputField"
-                    v-model="fullName" 
-                    placeholder="Contoh: Athar Ghaisan"
-                    required
-                  />
+            <div :class="$style.formBox">
+              <div :class="$style.loginForm">
+                <div :class="$style.intro">
+                  <h1 :class="$style.welcomeTitle">
+                    Selamat Datang 👋
+                  </h1>
+                  <p :class="$style.subtitle">Hari yang baru untuk teman berbulu kita</p>
                 </div>
+    
+                <p v-if="successMessage" :class="$style.successMessage">
+                    {{ successMessage }}
+                </p>
+                <p v-if="errorMessage" :class="$style.errorMessage">
+                    {{ errorMessage }}
+                </p>
   
-                <div :class="$style.inputGroup">
-                  <label :class="$style.label">Email</label>
-                  <input 
-                    type="email" 
-                    :class="$style.inputField"
-                    v-model="email" 
-                    placeholder="Contoh: example@email.com"
-                    required
-                  />
-                </div>
-                
-                <div :class="$style.inputGroup">
-                  <label :class="$style.label">Password</label>
-                  <input 
-                    type="password" 
-                    :class="$style.inputField"
-                    v-model="password" 
-                    placeholder="Harus setidaknya 8 karakter"
-                    required
-                  />
-                </div>
-  
-                <div :class="$style.inputGroup">
-                  <label :class="$style.label">Domisili</label>
-                  <input 
-                    type="text" 
-                    :class="$style.inputField"
-                    v-model="domicile" 
-                    placeholder="Kota tempat tinggal Anda"
-                    required
-                  />
-                </div>
-  
-                <button type="submit" :class="$style.mainButton">
-                  Daftar
-                </button>
-              </form>
-  
-              <div :class="$style.socialSignIn">
-                <div :class="$style.orDivider">
-                  <div :class="$style.dividerLine"></div>
-                  <span :class="$style.orText">Atau</span>
-                  <div :class="$style.dividerLine"></div>
-                </div>
-                
-                <div :class="$style.socialButtons">
-                  <button :class="$style.socialButton">
-                    <img :class="$style.socialIcon" alt="Google" src="../assets/Google.png" />
-                    <span>Daftar dengan Google</span>
-                  </button>
+                <form :class="$style.form" @submit.prevent="handleSignUp">
                   
-                  <button :class="$style.socialButton">
-                    <img :class="$style.socialIcon" alt="Facebook" src="../assets/Facebook.png" />
-                    <span>Daftar dengan Facebook</span>
+                  <div :class="$style.inputGroup">
+                    <label :class="$style.label">Nama Lengkap</label>
+                    <input 
+                      type="text" 
+                      :class="$style.inputField"
+                      v-model="fullName" 
+                      placeholder="Contoh: Athar Ghaisan"
+                      required
+                      :disabled="loading"
+                    />
+                  </div>
+    
+                  <div :class="$style.inputGroup">
+                    <label :class="$style.label">Email</label>
+                    <input 
+                      type="email" 
+                      :class="$style.inputField"
+                      v-model="email" 
+                      placeholder="Contoh: example@email.com"
+                      required
+                      :disabled="loading"
+                    />
+                  </div>
+                  
+                  <div :class="$style.inputGroup">
+                    <label :class="$style.label">Password</label>
+                    <input 
+                      type="password" 
+                      :class="$style.inputField"
+                      v-model="password" 
+                      placeholder="Minimal 8 karakter"
+                      required
+                      :disabled="loading"
+                    />
+                  </div>
+
+                  <div :class="$style.inputGroup">
+                      <label :class="$style.label">Provinsi</label>
+                      <select
+                          :class="$style.inputField"
+                          v-model="provinsiId"
+                          required
+                          :disabled="loading"
+                      >
+                          <option value="" disabled>Pilih Provinsi Anda</option>
+                          <option v-for="p in provinces" :key="p.id" :value="p.id">
+                            {{ p.nama_provinsi }} </option>
+                      </select>
+                  </div>
+                  <button 
+                    type="submit" 
+                    :class="$style.loginButton"
+                    :disabled="loading"
+                  >
+                    {{ loading ? 'Mendaftar...' : 'Daftar Sekarang' }}
+                  </button>
+                </form>
+    
+                <div :class="$style.divider">
+                  <span>atau daftar dengan</span>
+                </div>
+    
+                <div :class="$style.socialLogin">
+                  <button :class="$style.socialButton" :disabled="loading">
+                    <img src="../assets/Google.png" alt="Google" :class="$style.socialIcon" />
+                    Google
+                  </button>
+                  <button :class="$style.socialButton" :disabled="loading">
+                    <img src="../assets/Facebook.png" alt="Facebook" :class="$style.socialIcon" />
+                    Facebook
                   </button>
                 </div>
-              </div>
-  
-              <div :class="$style.signupLink">
-                <span>Sudah punya akun? </span>
-                <button :class="$style.signupText" @click="goToLogin">Masuk</button>
+    
+                <div :class="$style.signupLink">
+                  Sudah punya akun? 
+                  <router-link to="/login" :class="$style.signupText">
+                      Masuk di sini.
+                  </router-link>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-  
-        <!-- Right Side - Cat Art -->
-        <div :class="$style.rightSide">
-          <img :class="$style.artImage" alt="Cat Art" src="../assets/image.png" />
+    
+          <div :class="$style.rightSide">
+            <img 
+              src="../assets/image.png" 
+              alt="Kucing menggemaskan" 
+              :class="$style.artImage"
+            />
+          </div>
         </div>
       </div>
     </div>
-  </template>
-  
-  <script setup>
-  import { ref } from 'vue';
-  import { useRouter } from 'vue-router';
-  
-  const fullName = ref('');
-  const email = ref('');
-  const password = ref('');
-  const domicile = ref('');
-  const router = useRouter();
-  
-  const handleSignUp = () => {
-    if (!fullName.value || !email.value || !password.value || !domicile.value) {
-      alert('Harap lengkapi semua field.');
-      return;
+    </template>
+    
+    <script>
+    import { authAPI, dataAPI } from '../services/api'; // Import dataAPI
+    import { useRouter } from 'vue-router';
+    import { ref, onMounted } from 'vue';
+    
+    export default {
+      name: 'RegisterPage',
+      setup() {
+        const router = useRouter();
+        const fullName = ref('');
+        const email = ref('');
+        const password = ref('');
+        const provinsiId = ref('');
+        const provinces = ref([]);
+        const loading = ref(false);
+        const errorMessage = ref(null);
+        const successMessage = ref(null);
+
+        // ✅ Ambil Provinsi dari Endpoint Wilayah
+        const fetchProvinces = async () => {
+            try {
+                const response = await dataAPI.getProvinces();
+                // Backend wilayah mengembalikan { success: true, data: [...] }
+                provinces.value = response.data; 
+            } catch (error) {
+                console.error('Gagal load provinsi:', error);
+            }
+        };
+
+        onMounted(fetchProvinces);
+
+        const handleSignUp = async () => {
+          loading.value = true;
+          errorMessage.value = null;
+          try {
+            const userData = {
+              fullName: fullName.value,
+              email: email.value,
+              password: password.value,
+              provinsiId: provinsiId.value, 
+            };
+            
+            await authAPI.register(userData);
+            
+            successMessage.value = 'Registrasi Berhasil! Mengalihkan...';
+            setTimeout(() => router.push('/login'), 2000);
+
+          } catch (error) {
+            errorMessage.value = error.message || 'Gagal Mendaftar.';
+          } finally {
+            loading.value = false;
+          }
+        };
+
+        return {
+          fullName, email, password, provinsiId, provinces, 
+          loading, errorMessage, successMessage, handleSignUp
+        };
+      },
+    };
+    </script>
+    
+    <style module>
+    :root {
+      --primary: #313957;
+      --secondary: #f6c590; 
+      --accent: #9e7363;
+      --light-bg: #ffffff;
+      --dark-text: #313957;
     }
-  
-    if (password.value.length < 8) {
-      alert('Password harus setidaknya 8 karakter.');
-      return;
+    
+    /* Global Container */
+    .loginPage {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: #f7f9fc;
+      padding: 20px;
     }
-  
-    // Simulasi registrasi berhasil
-    console.log('User registered:', {
-      fullName: fullName.value,
-      email: email.value,
-      domicile: domicile.value
-    });
     
-    // Simpan status login (bisa diganti dengan Pinia/Vuex nanti)
-    localStorage.setItem('isLoggedIn', 'true');
-    localStorage.setItem('userEmail', email.value);
-    localStorage.setItem('userName', fullName.value);
-    
-    // Redirect ke home page
-    router.push({ name: 'Home' });
-  };
-  
-  const goToLogin = () => {
-    router.push({ name: 'Login' });
-  };
-  </script>
-  
-  <style module>
-  .loginPage {
-    min-height: 100vh;
-    background: url('../assets/background_fix.png') no-repeat center center fixed;
-    background-size: cover;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-  }
-  
-  .mainContainer {
-    display: flex;
-    max-width: 1000px;
-    width: 100%;
-    background: #f6c590;
-    border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-    border: 1px solid #e0e0e0;
-    position: relative;
-  }
-  
-  /* Kotak Background untuk Form */
-  .formBackgroundBox {
-    flex: 1;
-    background: rgba(255, 255, 240, 0.95);
-    border-radius: 20px;
-    margin: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    outline: 2px solid #000000;
-    outline-offset: 0px;
-  }
-  
-  /* Left Side - Form */
-  .leftSide {
-    flex: 1;
-    padding: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .loginForm {
-    width: 100%;
-    max-width: 400px;
-    display: flex;
-    flex-direction: column;
-    gap: 32px;
-  }
-  
-  .intro {
-    text-align: center;
-  }
-  
-  .welcomeTitle {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #162d3a;
-    margin: 0 0 8px 0;
-    font-family: 'SF Pro Rounded', sans-serif;
-  }
-  
-  .subtitle {
-    font-size: 1.1rem;
-    color: #313957;
-    margin: 0;
-    line-height: 1.5;
-  }
-  
-  /* Form Styles */
-  .form {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-  
-  .inputGroup {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  
-  .label {
-    font-weight: 500;
-    color: #9e7363;
-    font-size: 0.9rem;
-  }
-  
-  .inputField {
-    padding: 14px 16px;
-    border: 1px solid #d4d7e3;
-    border-radius: 12px;
-    background-color: #f7fbff;
-    font-size: 1rem;
-    transition: all 0.3s ease;
-  }
-  
-  .inputField:focus {
-    outline: none;
-    border-color: #9e7363;
-    box-shadow: 0 0 0 3px rgba(158, 115, 99, 0.1);
-  }
-  
-  .mainButton {
-    background-color: #9e7363;
-    color: white;
-    border: none;
-    border-radius: 12px;
-    padding: 16px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    margin-top: 10px;
-  }
-  
-  .mainButton:hover {
-    background-color: #f6c590;
-  }
-  
-  /* Social Sign In */
-  .socialSignIn {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-  
-  .orDivider {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    color: #9e7363;
-  }
-  
-  .dividerLine {
-    flex: 1;
-    height: 1px;
-    background-color: #cfdfe2;
-  }
-  
-  .orText {
-    font-size: 0.9rem;
-    font-weight: 500;
-  }
-  
-  .socialButtons {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  
-  .socialButton {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    padding: 12px 16px;
-    border: 1px solid #e0e0e0;
-    border-radius: 12px;
-    background-color: #f3f9fa;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 0.9rem;
-  }
-  
-  .socialButton:hover {
-    background-color: #e8f4f8;
-    transform: translateY(-1px);
-  }
-  
-  .socialIcon {
-    width: 20px;
-    height: 20px;
-  }
-  
-  /* Sign Up Link */
-  .signupLink {
-    text-align: center;
-    color: #313957;
-    font-size: 1rem;
-  }
-  
-  .signupText {
-    background: none;
-    border: none;
-    color: #9e7363;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 1rem;
-  }
-  
-  .signupText:hover {
-    text-decoration: underline;
-  }
-  
-  /* Right Side - Image */
-  .rightSide {
-    flex: 1;
-    display: flex;
-    border-radius: 12px;
-  }
-  
-  .artImage {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    padding: 20px;
-    
-  }
-  
-  /* Responsive Design */
-  @media (max-width: 768px) {
     .mainContainer {
-      flex-direction: column;
+      width: 100%;
+      max-width: 1100px;
+      padding: 20px;
     }
     
+    /* Background Box untuk Form */
     .formBackgroundBox {
-      margin: 15px;
-      border-radius: 15px;
-      outline: 2px solid #000000;
-    }
-    
-    .rightSide {
-      display: none;
-    }
-    
-    .leftSide {
-      padding: 30px 20px;
-    }
-  }
-  
-  @media (max-width: 480px) {
-    .formBackgroundBox {
-      margin: 10px;
+      display: flex;
+      background-color: var(--light-bg);
       border-radius: 12px;
-      outline: 2px solid #000000;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      min-height: 600px;
     }
     
+    /* Left Side - Form */
     .leftSide {
-      padding: 20px 15px;
+      flex: 1;
+      padding: 40px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .formBox {
+        width: 100%;
+        max-width: 400px; 
+    }
+
+    .loginForm {
+      width: 100%;
+    }
+    
+    .intro {
+      margin-bottom: 30px;
+      text-align: center;
     }
     
     .welcomeTitle {
-      font-size: 2rem;
+      color: var(--primary);
+      margin-bottom: 5px;
+      font-size: 2.2rem;
+      font-weight: 700;
     }
-  }
-  </style>
+    
+    .subtitle {
+      color: #667085;
+      font-size: 1rem;
+    }
+    
+    /* Form Styles */
+    .form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    .inputGroup {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .label {
+      font-size: 0.9rem;
+      color: var(--dark-text);
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    
+    .inputField {
+      padding: 12px 15px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 1rem;
+      color: var(--dark-text);
+      transition: border-color 0.3s;
+    }
+    
+    .inputField:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(158, 115, 99, 0.2); 
+    }
+
+    .inputField:disabled {
+        background-color: #f0f0f0;
+        cursor: not-allowed;
+    }
+    
+    .loginButton {
+      padding: 14px;
+      background-color: var(--accent);
+      color: var(--light-bg);
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background-color 0.3s, transform 0.1s;
+      margin-top: 10px;
+    }
+    
+    .loginButton:hover:not(:disabled) {
+      background-color: #8c675a; 
+    }
+
+    .loginButton:disabled {
+        background-color: #c0c0c0;
+        cursor: not-allowed;
+    }
+    
+    /* Divider */
+    .divider {
+      text-align: center;
+      margin: 25px 0;
+      font-size: 0.85rem;
+      color: #999;
+      position: relative;
+    }
+    
+    .divider::before, .divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 40%;
+      height: 1px;
+      background-color: #e0e0e0;
+    }
+    
+    .divider::before {
+      left: 0;
+    }
+    
+    .divider::after {
+      right: 0;
+    }
+    
+    /* Social Login */
+    .socialLogin {
+      display: flex;
+      gap: 15px;
+    }
+    
+    .socialButton {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      background-color: #f3f9fa;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 0.9rem;
+    }
+    
+    .socialButton:hover:not(:disabled) {
+      background-color: #e8f4f8;
+      transform: translateY(-1px);
+    }
+
+    .socialButton:disabled {
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
+    
+    .socialIcon {
+      width: 20px;
+      height: 20px;
+    }
+    
+    /* Sign Up Link */
+    .signupLink {
+      text-align: center;
+      color: var(--dark-text);
+      font-size: 1rem;
+      margin-top: 20px;
+    }
+    
+    .signupText {
+      background: none;
+      border: none;
+      color: var(--accent); 
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    
+    .signupText:hover {
+      text-decoration: underline;
+    }
+    
+    /* Right Side - Image */
+    .rightSide {
+      flex: 1;
+      display: flex;
+      background-color: var(--secondary); 
+      border-radius: 0 12px 12px 0;
+      overflow: hidden;
+      
+      @media (max-width: 768px) {
+        display: none;
+      }
+    }
+    
+    .artImage {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      padding: 20px; 
+    }
+    
+    /* --- Pesan Error dan Sukses --- */
+    .errorMessage {
+        color: #a94442; 
+        background-color: #f2dede; 
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        text-align: center;
+        font-size: 0.9rem;
+        border: 1px solid #ebccd1;
+        font-weight: 500;
+    }
+    
+    .successMessage {
+        color: #3c763d; 
+        background-color: #dff0d8; 
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        text-align: center;
+        font-size: 0.9rem;
+        border: 1px solid #d6e9c6;
+        font-weight: 500;
+    }
+
+    /* Responsiveness for smaller screens */
+    @media (max-width: 1024px) {
+        .formBackgroundBox {
+            min-height: 500px;
+        }
+        .leftSide {
+            padding: 30px;
+        }
+        .welcomeTitle {
+            font-size: 2rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .mainContainer {
+            padding: 0;
+        }
+        .formBackgroundBox {
+            box-shadow: none;
+            border-radius: 0;
+            min-height: 100vh; 
+            flex-direction: column;
+        }
+        .leftSide {
+            padding: 20px;
+        }
+        .formBox {
+            max-width: none;
+        }
+    }
+    </style>

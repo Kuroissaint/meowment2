@@ -1,9 +1,7 @@
 <template>
     <div :class="$style.loginPage">
       <div :class="$style.mainContainer">
-        <!-- Background Box untuk Form -->
         <div :class="$style.formBackgroundBox">
-          <!-- Left Side - Login Form -->
           <div :class="$style.leftSide">
             <div :class="$style.loginForm">
               <div :class="$style.intro">
@@ -22,6 +20,7 @@
                     v-model="email" 
                     placeholder="Example@email.com"
                     required
+                    :disabled="loading"
                   />
                 </div>
                 
@@ -33,15 +32,18 @@
                     v-model="password" 
                     placeholder="At least 8 characters"
                     required
+                    :disabled="loading"
                   />
                 </div>
                 
                 <button type="button" :class="$style.forgotPassword">
                   Forgot Password?
                 </button>
-  
-                <button type="submit" :class="$style.mainButton">
-                  Sign in
+                
+                <p v-if="errorMsg" style="color: red; font-size: 0.9rem; margin: 0;">{{ errorMsg }}</p>
+
+                <button type="submit" :class="$style.mainButton" :disabled="loading">
+                  {{ loading ? 'Signing in...' : 'Sign in' }}
                 </button>
               </form>
   
@@ -73,7 +75,6 @@
           </div>
         </div>
   
-        <!-- Right Side - Cat Art -->
         <div :class="$style.rightSide">
           <img :class="$style.artImage" alt="Cat Art" src="../assets/image.png" />
         </div>
@@ -84,46 +85,54 @@
   <script setup>
   import { ref } from 'vue';
   import { useRouter } from 'vue-router';
+  import { authAPI } from '../services/api';
   
   const email = ref('');
   const password = ref('');
+  const loading = ref(false);
+  const errorMsg = ref('');
   const router = useRouter();
   
-  const handleSignIn = () => {
-    if (!email.value || !password.value) {
-      alert('Please enter both email and password.');
-      return;
+  const handleSignIn = async () => {
+  errorMsg.value = '';
+  if (!email.value || !password.value) {
+    errorMsg.value = 'Harap isi email dan password.';
+    return;
+  }
+
+  loading.value = true;
+
+  try {
+    // ✅ Panggil Login pakai API helper
+    const response = await authAPI.login({
+      email: email.value,
+      password: password.value
+    });
+
+    // Simpan Token
+    if (response.data && response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        router.push({ name: 'Home' }); // Masuk ke Home
     }
+
+  } catch (err) {
+    console.error('Login Gagal:', err);
+    errorMsg.value = err.message || 'Login gagal.';
+  } finally {
+    loading.value = false;
+  }
+};
   
-    if (password.value.length < 8) {
-      alert('Password must be at least 8 characters.');
-      return;
-    }
-  
-    // Simulasi login berhasil
-    console.log('User signed in:', email.value);
-    
-    // Simpan status login
-    localStorage.setItem('isLoggedIn', 'true');
-    localStorage.setItem('userEmail', email.value);
-    localStorage.setItem('userName', email.value.split('@')[0]); // Simpan nama dari email
-    
-    // Trigger custom event untuk update navbar
-    window.dispatchEvent(new Event('storage'));
-    
-    // Redirect ke home page
-    router.push({ name: 'Home' });
-  };
-  
-  const goToSignUp = () => {
-    router.push({ name: 'Register' });
+  const goToRegister = () => {
+    router.push({ name: 'Register' }); // Pastikan nama route register Anda benar ('Register' atau 'SignUp')
   };
   </script>
   
   <style module>
+  /* Style TETAP SAMA SEPERTI FILE ASLI ANDA */
   .loginPage {
     min-height: 100vh;
-    /* Mengubah background gradient menjadi gambar PNG */
     background: url('../assets/background_fix.png') no-repeat center center fixed;
     background-size: cover;
     display: flex;
@@ -155,7 +164,6 @@
     justify-content: center;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.3);
-    /* Outline hitam yang ditambahkan */
     outline: 2px solid #000000;
     outline-offset: 0px;
   }
@@ -259,6 +267,12 @@
   
   .mainButton:hover {
     background-color: #f6c590;
+  }
+
+  /* Disabled state for button */
+  .mainButton:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
   }
   
   /* Social Sign In */
