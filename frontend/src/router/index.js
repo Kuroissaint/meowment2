@@ -18,6 +18,7 @@ import RescuePage from '../views/RescuePage.vue';
 import FormLaporanRescue from '../views/FormLaporanRescue.vue';
 
 import DonatePage from '../views/Donate.vue'; 
+import MyReportsPage from '../views/MyReportsPage.vue'; 
 
 const routes = [
   {
@@ -101,12 +102,18 @@ const routes = [
     path: '/donate/qris',
     name: 'QrisCheckout',
     component: () => import('../views/QrisCheckout.vue'),
-    }
+    },
+    {
+    path: '/my-reports',
+    name: 'MyReports', // Ini yang dipanggil di router.push({ name: 'MyReports' })
+    component: MyReportsPage 
+  }
 ];
 
 const router = createRouter({
   history: createWebHistory(), 
   routes,
 });
+
 
 export default router;
