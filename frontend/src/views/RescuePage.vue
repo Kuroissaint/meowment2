@@ -3,43 +3,11 @@
     <div class="filter-controls">
       <button class="btn-aksi" @click="buatLaporan">Kirim Laporan</button>
       <button 
-        class="btn-aksi"
-        :class="{ active: showLaporan }"
-        @click="toggleLaporan"
+        class="btn-aksi" 
+        @click="lihatLaporanAnda" 
       >
         Laporan Anda
       </button>
-    </div>
-
-    <transition name="fade">
-            <div v-if="showLaporan && latestUserReport" class="laporan-anda">
-        <h2>Laporan Anda</h2>
-        <div class="laporan-box">
-          <div class="laporan-foto">
-            <img :src="latestUserReport.gambar || '../assets/kucheng.png'" alt="Foto laporan" />
-          </div>
-
-          <div class="laporan-info">
-            <div class="info-item" v-for="(item, index) in dynamicLaporanFields" :key="index">
-              <strong>{{ item.label }}</strong><span>:</span>
-              <p>{{ item.value }}</p>
-            </div>
-
-            <div class="info-item">
-              <strong>Status Penanganan</strong> <span>:</span>
-              <span 
-    :class="['status-badge', latestUserReport.status_display === 'Sedang Diproses' ? 'sedang' : 'selesai']"
->
-    {{ latestUserReport.status_display }} 
-</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </transition>
-
-    <div v-if="showLaporan && !latestUserReport && !loading" class="laporan-anda">
-        <p style="text-align: center; color: var(--dark);">Anda belum membuat laporan rescue.</p>
     </div>
 
     <div class="laporan-lain-section">
@@ -84,45 +52,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import DetailRescue from '../components/DetailRescue.vue'
 import axios from "../services/api";
 
 const router = useRouter()
 
-const showLaporan = ref(false)
 const allReports = ref([])
-const userReports = ref([])
 const loading = ref(true)
 
-// 🔥 Ambil laporan terbaru user
-const latestUserReport = computed(() =>
-  userReports.value.length > 0 ? userReports.value[0] : null
-)
-
-// 🔥 Field laporan user
-const dynamicLaporanFields = computed(() => {
-  const report = latestUserReport.value
-  if (!report) return []
-
-  const formattedDate = new Date(report.waktu_penemuan).toLocaleString("id-ID", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
-  })
-
-  return [
-    { label: "Nama Pelapor", value: report.nama_pelapor },
-    { label: "No. Telepon", value: report.telepon },
-    { label: "Waktu Penemuan", value: formattedDate },
-    { label: "Lokasi", value: report.lokasi_penemuan },
-    { label: "Tag", value: report.tags || "Tidak Ada" },
-    { label: "Deskripsi", value: report.deskripsi }
-  ]
-})
 
 /* ============================================
    🔥 FETCH GRID LAPORAN RESCUE
@@ -136,31 +75,6 @@ const fetchAllReports = async () => {
   }
 }
 
-/* ============================================
-   🔥 FETCH LAPORAN ANDA
-============================================ */
-const fetchUserReports = async () => {
-  const ids = JSON.parse(localStorage.getItem('myRescueReports') || '[]')
-  if (ids.length === 0) {
-    userReports.value = []
-    return
-  }
-
-  try {
-    const idsString = ids.join(',')
-    const res = await axios.get(`/rescue?ids=${idsString}`)
-    const newReports = res.data.data || []
-
-    // ✅ Tambahkan laporan baru ke existing array, tanpa overwrite
-    newReports.forEach(r => {
-      const exists = userReports.value.find(u => u.id === r.id)
-      if (!exists) userReports.value.push(r)
-    })
-  } catch (err) {
-    console.error("Gagal ambil Laporan Anda:", err)
-  }
-}
-
 
 /* ============================================
    🔥 REFRESH DATA
@@ -168,14 +82,13 @@ const fetchUserReports = async () => {
 const refreshData = async () => {
   loading.value = true
   await fetchAllReports()
-  await fetchUserReports()
   loading.value = false
 }
 
 /* ============================================
    ACTION / BUTTONS
 ============================================ */
-const toggleLaporan = () => showLaporan.value = !showLaporan.value
+const lihatLaporanAnda = () => router.push({ name: 'MyReports' })
 const buatLaporan = () => router.push({ name: 'FormLaporanRescue' })
 
 /* ============================================
@@ -199,7 +112,6 @@ const closeDetailRescue = () => {
 
 onMounted(() => refreshData())
 </script>
-
 
 
 <style scoped>
